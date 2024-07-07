@@ -10,8 +10,10 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
 from reportlab.platypus import Table, TableStyle
 
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationToolbar2QT
 from matplotlib.figure import Figure
+
+import funciones
 
 class Aplicacion_Gui(QMainWindow):
     def __init__(self):
@@ -27,6 +29,7 @@ class Aplicacion_Gui(QMainWindow):
 
         #DEFINICION DE VARIABLES
         self.meses=[]
+        self.n_meses=[]
         self.consumo=[]
 
         self.n_informe=0
@@ -114,13 +117,13 @@ class Aplicacion_Gui(QMainWindow):
         self.nDat2.move(105,20)
         self.label2 = QLabel("N° datos considerados:", self.contResult)
         self.label2.move(10,40)
-        self.nDatEleg2 = QLabel(self.n_dat_eleg, self.contResult)
+        self.nDatEleg2 = QLabel("0", self.contResult)
         self.nDatEleg2.setFixedWidth(200)
         self.nDatEleg2.move(128,40)
         self.label1 = QLabel("Ecuación obtenida por regresión:", self.contResult)
         self.label1.move(10,65)
         self.lEcu = QLabel(self.ecu, self.contResult)
-        self.lEcu.setFixedWidth(400)
+        self.lEcu.setFixedWidth(300)
         self.lEcu.move(175,65)
         self.boton1 = QPushButton("Ver más detalles", self.contResult)
         self.boton1.clicked.connect(self.cambiar_direc)
@@ -141,35 +144,39 @@ class Aplicacion_Gui(QMainWindow):
     def grafica(self,x1,y1,x2,y2):
         #Se define la caja que va contner a las figuras
         self.figuras = QHBoxLayout()
+        self.figura1 = QVBoxLayout()
+        self.figura2 = QVBoxLayout()
 
         #Se crean las figuras y se colocan en el interior de un contenedor
 
         #GRAFICA CON PREDICCIÓN
         self.fig1 = Figure(figsize=(1.5,2))
         self.canva1 = FigureCanvasQTAgg(self.fig1)
+        self.toolbar1 = NavigationToolbar2QT(self.canva1)
         #GRAFICA VERDADERA
         self.fig2 = Figure(figsize=(1.5,2))
         self.canva2 = FigureCanvasQTAgg(self.fig2)
+        self.toolbar2 = NavigationToolbar2QT(self.canva2)
 
-        #Se grafica en ambas gráficas
+        #Se grafica en ambas gráficasI
 
         ax1 = self.fig1.add_subplot(111)
-        ax1.plot(x1,y1)
+        funciones.graficar_polinomio_original(ax1,self.meses[:int(self.n_dat_eleg)],self.consumo[:int(self.n_dat_eleg)])
         self.canva1.draw()
 
         ax2 = self.fig2.add_subplot(111)
-        ax2.plot(x2,y2)
+        funciones.graficar_polinomio_original(ax2,self.meses,self.consumo)
         self.canva2.draw()
 
+        self.figura1.addWidget(self.toolbar1)
+        self.figura1.addWidget(self.canva1)
+        self.figura2.addWidget(self.toolbar2)
+        self.figura2.addWidget(self.canva2)
 
-        self.figuras.addWidget(self.canva1)
-        self.figuras.addWidget(self.canva2)
+        self.figuras.addLayout(self.figura1)
+        self.figuras.addLayout(self.figura2)
 
         self.contGraf.setLayout(self.figuras)
-
-    def calculos(self):
-        self.val_real=['a','b','c']
-        self.val_pred=['1','2','3']
 
     def gen_informe(self):
         self.n_informe += 1
@@ -183,7 +190,7 @@ class Aplicacion_Gui(QMainWindow):
 
         # Definir los datos de la tabla
 
-        data = self.calculos(['1','2','3'],['a','b','c'])
+        data = [['1','2','3'],['a','b','c']]
 
         # Crear la tabla
         table = Table(data)
@@ -211,20 +218,25 @@ class Aplicacion_Gui(QMainWindow):
             self.doc = pd.read_excel(self.direc)
             fila,columna = self.doc.shape
             self.n_dat = str(fila)
-            self.nDat1.setText(self.n_dat)
-            self.nDat2.setText(self.n_dat)
-            self.nDatEleg1.setText(self.n_dat_eleg)
-            self.nDatEleg2.setText(self.n_dat_eleg)
-
+            
             for i in range(fila):
                 self.meses.append(self.doc.iloc[i,0][:3])
+                self.n_meses.append(i)
                 self.consumo.append(int(self.doc.iloc[i,1]))
             self.grafica(self.meses,self.consumo,self.meses,self.consumo)
+            self.ecu = funciones.calcular_polinomio(self.n_meses, self.consumo)
 
-
+            self.actualizar_pag()
 
     def ir_pag(self):
         webbrowser.open_new_tab("https://programapython.github.io/ElectriCal/")
+
+    def actualizar_pag(self):
+        self.nDat1.setText(self.n_dat)
+        self.nDat2.setText(self.n_dat)
+        self.nDatEleg1.setText(self.n_dat_eleg)
+        self.nDatEleg2.setText(self.n_dat_eleg)
+        self.lEcu.setText(str(self.ecu))
 
 
 class App(QApplication):
