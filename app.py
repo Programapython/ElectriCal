@@ -32,7 +32,7 @@ class Aplicacion_Gui(QMainWindow):
         self.n_informe=0
         self.direc="Ningun archivo seleccionado"
         self.n_dat="0"
-        self.n_dat_eleg="0"
+        self.n_dat_eleg="7"
         self.ecu="---"
 
         self.inicializar_gui()
@@ -98,9 +98,9 @@ class Aplicacion_Gui(QMainWindow):
         self.nDat1.move(100,45)
         self.label2 = QLabel("N° datos considerados:", self.contArch)
         self.label2.move(130,45)
-        self.nDatEleg = QLabel(self.n_dat_eleg, self.contArch)
-        self.nDatEleg.setFixedWidth(200)
-        self.nDatEleg.move(245,45)
+        self.nDatEleg1 = QLabel("0", self.contArch)
+        self.nDatEleg1.setFixedWidth(200)
+        self.nDatEleg1.move(245,45)
         self.boton2 = QPushButton("Personalizar",self.contArch)
         self.boton2.clicked.connect(self.cambiar_direc)
         self.boton2.setFixedWidth(150)
@@ -114,9 +114,9 @@ class Aplicacion_Gui(QMainWindow):
         self.nDat2.move(105,20)
         self.label2 = QLabel("N° datos considerados:", self.contResult)
         self.label2.move(10,40)
-        self.nDatEleg = QLabel(self.n_dat_eleg, self.contResult)
-        self.nDatEleg.setFixedWidth(200)
-        self.nDatEleg.move(128,40)
+        self.nDatEleg2 = QLabel(self.n_dat_eleg, self.contResult)
+        self.nDatEleg2.setFixedWidth(200)
+        self.nDatEleg2.move(128,40)
         self.label1 = QLabel("Ecuación obtenida por regresión:", self.contResult)
         self.label1.move(10,65)
         self.lEcu = QLabel(self.ecu, self.contResult)
@@ -210,9 +210,11 @@ class Aplicacion_Gui(QMainWindow):
             print(self.lDirec.text())
             self.doc = pd.read_excel(self.direc)
             fila,columna = self.doc.shape
-            self.n_dat = fila
-            self.nDat1.setText(str(self.n_dat))
-            self.nDat2.setText(str(self.n_dat))
+            self.n_dat = str(fila)
+            self.nDat1.setText(self.n_dat)
+            self.nDat2.setText(self.n_dat)
+            self.nDatEleg1.setText(self.n_dat_eleg)
+            self.nDatEleg2.setText(self.n_dat_eleg)
 
             for i in range(fila):
                 self.meses.append(self.doc.iloc[i,0][:3])
@@ -225,7 +227,6 @@ class Aplicacion_Gui(QMainWindow):
         webbrowser.open_new_tab("https://programapython.github.io/ElectriCal/")
 
 
-
 class App(QApplication):
     def __init__(self, sys_argv):
         super(App, self).__init__(sys_argv)
@@ -235,28 +236,3 @@ if __name__=='__main__':
     app = App(sys.argv)
     sys.exit(app.exec_())
 
-
-'''
-#CODIGO ANTERIOR:
-
-app=QApplication(sys.argv)
-window=QWidget()
-window.setWindowTitle("Calculadora de consumo eléctrico")
-
-flag1=QLabel("Ingrese la dirección del archivo que contiene los datos:", window)
-flag1.move(0,0)
-flag1.adjustSize()
-flag1.setStyleSheet("background-color:blue")
-
-btn_import=QPushButton("Seleccionar archivo",window)
-btn_import.move(0,20)
-
-
-flag2=QLabel("GRÁFICA OBTENIDA", window)
-flag2.move(200,200)
-flag2.adjustSize()
-flag2.setStyleSheet("background-color:red")
-
-window.show()
-app.exec()
-'''
