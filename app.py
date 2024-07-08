@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QGroupBox, QLabel, QPushButton, QToolBar,QFileDialog, QMenu, QAction
+from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QGroupBox, QLabel, QPushButton, QToolBar,QFileDialog, QMenu, QAction, QLineEdit,QDialog,QTableWidget,QTableWidgetItem
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QColor, QIcon
 import sys
@@ -35,8 +35,9 @@ class Aplicacion_Gui(QMainWindow):
         self.n_informe=0
         self.direc="Ningun archivo seleccionado"
         self.n_dat="0"
-        self.n_dat_eleg="7"
+        self.n_dat_eleg=7 #Hasta el mes de octubre
         self.ecu="---"
+        self.result=[]
 
         self.inicializar_gui()
 
@@ -51,25 +52,21 @@ class Aplicacion_Gui(QMainWindow):
         menu = self.menuBar()
         self.menuArchivo = menu.addMenu('Archivo')
         self.menuHerra = menu.addMenu('Herramientas')
-        self.menuApar = menu.addMenu('Apariencia')
         self.menuAcerca = menu.addMenu('Acerca de')
         
         #SE AGREGAN LAS OPCIONES DE CDAD SECCION DEL MENU
         op1 = QAction('Abrir archivo', self)
         op1.triggered.connect(self.cambiar_direc)
         self.menuArchivo.addAction(op1)
-        op2 = QAction('Personalizar', self)
-        op2.triggered.connect(self.cambiar_direc)
+        op2 = QAction('Detalles', self)
+        op2.triggered.connect(lambda: vent_mas_detalles(self.resultados).exec_())
         self.menuHerra.addAction(op2)
-        op3 = QAction('Detalles', self)
-        op3.triggered.connect(self.cambiar_direc)
+        op3 = QAction('Imprimir', self)
+        op3.triggered.connect(self.gen_informe)
         self.menuHerra.addAction(op3)
-        op4 = QAction('Imprimir', self)
-        op4.triggered.connect(self.gen_informe)
-        self.menuHerra.addAction(op4)
-        op5 = QAction('Acerca de ...', self)
-        op5.triggered.connect(self.ir_pag)
-        self.menuAcerca.addAction(op5)
+        op4 = QAction('Acerca de ...', self)
+        op4.triggered.connect(self.ir_pag)
+        self.menuAcerca.addAction(op4)
 
         #SE DEFINE EL CONTENEDOR PRINCIPAL
         self.frame = QWidget()
@@ -104,10 +101,6 @@ class Aplicacion_Gui(QMainWindow):
         self.nDatEleg1 = QLabel("0", self.contArch)
         self.nDatEleg1.setFixedWidth(200)
         self.nDatEleg1.move(245,45)
-        self.boton2 = QPushButton("Personalizar",self.contArch)
-        self.boton2.clicked.connect(self.cambiar_direc)
-        self.boton2.setFixedWidth(150)
-        self.boton2.move(350,40)
         
 
         self.label1 = QLabel("N° total de datos:", self.contResult)
@@ -123,10 +116,10 @@ class Aplicacion_Gui(QMainWindow):
         self.label1 = QLabel("Ecuación obtenida por regresión:", self.contResult)
         self.label1.move(10,65)
         self.lEcu = QLabel(self.ecu, self.contResult)
-        self.lEcu.setFixedWidth(300)
+        self.lEcu.setFixedWidth(500)
         self.lEcu.move(175,65)
         self.boton1 = QPushButton("Ver más detalles", self.contResult)
-        self.boton1.clicked.connect(self.cambiar_direc)
+        self.boton1.clicked.connect(lambda: vent_mas_detalles(self.resultados).exec_())
         self.boton1.move(10,90)
         #############################################################
         #############################################################
@@ -141,7 +134,7 @@ class Aplicacion_Gui(QMainWindow):
 
         self.show()
 
-    def grafica(self,x1,y1,x2,y2):
+    def grafica(self):
         #Se define la caja que va contner a las figuras
         self.figuras = QHBoxLayout()
         self.figura1 = QVBoxLayout()
@@ -158,10 +151,10 @@ class Aplicacion_Gui(QMainWindow):
         self.canva2 = FigureCanvasQTAgg(self.fig2)
         self.toolbar2 = NavigationToolbar2QT(self.canva2)
 
-        #Se grafica en ambas gráficasI
+        #Se grafica en ambas gráficas
 
         ax1 = self.fig1.add_subplot(111)
-        funciones.graficar_polinomio_original(ax1,self.meses[:int(self.n_dat_eleg)],self.consumo[:int(self.n_dat_eleg)])
+        funciones.graficar_polinomio_ajustado(ax1,self.ecu, self.n_meses, self.consumo, self.n_dat_eleg)
         self.canva1.draw()
 
         ax2 = self.fig2.add_subplot(111)
@@ -185,15 +178,12 @@ class Aplicacion_Gui(QMainWindow):
         self.informe.drawString(70,730, f'Dirección de la fuente de datos: {self.direc}')
         self.informe.drawString(70,710, f'N° datos: {self.n_dat}')
         self.informe.drawString(70,690, f'N° datos considerados para la creación de la ecuación: {self.n_dat_eleg}')
-        self.informe.drawString(70,670, f'Ecuación obtenida por regresión: {self.ecu}')
-        self.informe.drawString(70,650, 'Tabla de errores:')
-
-        # Definir los datos de la tabla
-
-        data = [['1','2','3'],['a','b','c']]
+        self.informe.drawString(70,670, f'Ecuación obtenida por regresión:')
+        self.informe.drawString(70,650, f'{str(self.ecu)}')
+        self.informe.drawString(70,630, 'Tabla de errores:')
 
         # Crear la tabla
-        table = Table(data)
+        table = Table(self.resultados)
 
         # Establecer el estilo de la tabla
         style = TableStyle([('BACKGROUND', (0, 0), (-1, 0), colors.lightblue),
@@ -205,7 +195,7 @@ class Aplicacion_Gui(QMainWindow):
 
         # Dibujar la tabla en el PDF
         table.wrapOn(self.informe, 0, 0)
-        table.drawOn(self.informe, 200, 500)
+        table.drawOn(self.informe, 100, 350)
 
         self.informe.save()
 
@@ -220,11 +210,12 @@ class Aplicacion_Gui(QMainWindow):
             self.n_dat = str(fila)
             
             for i in range(fila):
-                self.meses.append(self.doc.iloc[i,0][:3])
+                self.meses.append(str(self.doc.iloc[i,0])[5:7])
                 self.n_meses.append(i)
-                self.consumo.append(int(self.doc.iloc[i,1]))
-            self.grafica(self.meses,self.consumo,self.meses,self.consumo)
-            self.ecu = funciones.calcular_polinomio(self.n_meses, self.consumo)
+                self.consumo.append(float(self.doc.iloc[i,2]))
+
+            self.ecu = funciones.calcular_polinomio(self.n_meses[:self.n_dat_eleg], self.consumo[:self.n_dat_eleg])
+            self.grafica()
 
             self.actualizar_pag()
 
@@ -234,9 +225,57 @@ class Aplicacion_Gui(QMainWindow):
     def actualizar_pag(self):
         self.nDat1.setText(self.n_dat)
         self.nDat2.setText(self.n_dat)
-        self.nDatEleg1.setText(self.n_dat_eleg)
-        self.nDatEleg2.setText(self.n_dat_eleg)
+        self.nDatEleg1.setText(str(self.n_dat_eleg))
+        self.nDatEleg2.setText(str(self.n_dat_eleg))
         self.lEcu.setText(str(self.ecu))
+        self.resultados = funciones.calcular_tabla(self.ecu, self.n_meses, self.consumo)
+
+class TablaEjemplo(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Ejemplo de Tabla en PyQt5")
+        self.setGeometry(100, 100, 400, 300)
+
+class vent_mas_detalles(QDialog):
+    def __init__(self, info):
+        super().__init__()
+        self.info = info
+        self.setWindowTitle("Mas detalles")
+        self.setGeometry(200, 200, 300, 200)
+
+        #SE DEFINE LAS PROPIEDADES PRINCIPALES DE LA VENTANA
+        self.setWindowTitle("Mas detalles")
+        self.setWindowIcon(QIcon('icono.ico'))
+        self.setGeometry(200, 200, 300, 400)
+
+        #SE DEFINE EL CONTENEDOR PRINCIPAL
+        self.contPrincipal = QVBoxLayout()
+        #SE DEFINE LOS CONTENEDORES
+        self.contResult = QGroupBox('PORCENTAJE DE ERROR DE LOS VALORES PREDICHOS')
+        self.contResult.setFixedHeight(400)
+
+        #COLOCAR LA TABLA
+        #############################################################
+        #############################################################
+        tabla = QTableWidget()
+        tabla.setRowCount(13)  # Número de filas
+        tabla.setColumnCount(5)
+        for i in range(len(self.info)):
+            for j in range(len(self.info[1])):
+                print(self.info)
+                tabla.setItem(i,j,QTableWidgetItem(self.info[i][j]))
+
+        # Agregar la tabla al diseño
+        layout = QVBoxLayout()
+        layout.addWidget(tabla)
+        #############################################################
+        #############################################################
+
+        self.contResult.setLayout(layout)
+        self.contPrincipal.addWidget(self.contResult)
+        self.setLayout(self.contPrincipal)
+
+        self.show()
 
 
 class App(QApplication):

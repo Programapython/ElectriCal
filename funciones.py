@@ -8,43 +8,37 @@ def calcular_polinomio(x, y):
 
 # Función para graficar el polinomio
 def graficar_polinomio_original(graf, x_vals, y_vals):
-    graf.plot(x_vals, y_vals)
+    graf.plot(x_vals, y_vals, label='Demanda energética 2023 de Kallpa')
     graf.scatter(x_vals, y_vals, color='red')
-    #graf.title('Demanda energética 2023')
-    #graf.xlabel('Mes')
-    #graf.ylabel('Potencia [MW]')
-    #graf.legend()
-    #graf.grid(True)
+    graf.legend()
+    graf.grid(True)
 
 
-def graficar_polinomio_ajustado(polynomial, x_vals, y_vals):
-    plt.plot(x_vals, y_vals, label=f'Polinomio ajustado')
-    plt.scatter(x_vals, y_vals, color='red')
-    plt.title('Demanda energética 2023')
-    plt.xlabel('Mes')
-    plt.ylabel('Potencia [MW]')
-    plt.legend()
-    plt.grid(True)
-    plt.show()
+def graficar_polinomio_ajustado(graf, pol, x_vals, y_vals, trunc):
+    x_plot = np.linspace(min(x_vals) - 0.01, max(x_vals) + 0.01, 100)
+    y_plot = pol(x_plot)
+    graf.plot(x_plot, y_plot, label='Polinomio ajustado')
+    graf.scatter(x_vals, y_vals, color='red')
+    graf.scatter(x_vals[trunc:], pol((x_vals[trunc:])), color='green')
+    graf.legend()
+    graf.grid(True)
 
-if __name__=='__main__':
+def calcular_tabla(pol,x_vals,y_vals):
+    resultados=[['Mes','Valor predicho (kW)','Valor real (kW)','Diferencia (kW)','Error relativo(%)']]
+    mes=x_vals
+    valor_predicho=pol(x_vals)
+    valor_real=y_vals
+    diferencia=[]
+    error_relativo=[]
+    for i in range(len(mes)):
+        dif = valor_real[i]-valor_predicho[i]
+        diferencia.append(dif)
+        porc=(dif/valor_real[i])*100
+        error_relativo.append(porc)
 
-    # Solicitar al usuario los puntos
-    num_puntos = int(input("Ingresa el número de puntos a ingresar: "))
-    x_vals = []
-    y_vals = []
-    for i in range(num_puntos):
-        x = float(input(f"Ingrese # mes{i+1}: "))
-        y = float(input(f"Ingrese potencia{i+1}: "))
-        x_vals.append(x)
-        y_vals.append(y)
+    for i in range(len(mes)):
+        result_i = [str(mes[i]),str(round(valor_predicho[i],5)),str(valor_real[i]),str(round(diferencia[i],5)),str(round(error_relativo[i],5))]
+        resultados.append(result_i)
 
-    # Calcular el polinomio que pasa por los puntos
-    polynomial = calcular_polinomio(x_vals, y_vals)
-    print(f'Polinomio: {polynomial}')
+    return resultados
 
-    # Graficar el polinomio
-    x_plot = np.linspace(min(x_vals) - 1, max(x_vals) + 1, 100)
-    y_plot = polynomial(x_plot)
-    print(x_plot, y_plot)
-    graficar_polinomio_ajustado(polynomial, x_vals, y_vals)
