@@ -24,7 +24,7 @@ def graficar_polinomio_ajustado(graf, pol, x_vals, y_vals, trunc):
     graf.grid(True)
 
 def calcular_tabla(pol,x_vals,y_vals):
-    resultados=[['Mes','Valor predicho (kW)','Valor real (kW)','Diferencia (kW)','Error relativo(%)']]
+    resultados=[['Mes','Valor predicho (MW)','Valor real (MW)','Diferencia (MW)','Error relativo(%)']]
     mes=x_vals
     valor_predicho=pol(x_vals)
     valor_real=y_vals
