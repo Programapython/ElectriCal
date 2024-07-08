@@ -20,7 +20,6 @@ class Aplicacion_Gui(QMainWindow):
         super().__init__()
         
         #Características de la ventana
-        #self.title = 'Calculadora de consumo eléctrico'
         self.title = 'ElectriCal'
         self.left = 100
         self.top = 100
@@ -98,9 +97,13 @@ class Aplicacion_Gui(QMainWindow):
         self.nDat1.move(100,45)
         self.label2 = QLabel("N° datos considerados:", self.contArch)
         self.label2.move(130,45)
-        self.nDatEleg1 = QLabel("0", self.contArch)
-        self.nDatEleg1.setFixedWidth(200)
-        self.nDatEleg1.move(245,45)
+        self.nDatEleg1 = QLineEdit("0", self.contArch)
+        self.nDatEleg1.setFixedWidth(25)
+        self.nDatEleg1.move(245,43)
+        self.boton2 = QPushButton("Graficar",self.contArch)
+        self.boton2.clicked.connect(self.grafica)
+        self.boton2.setFixedWidth(150)
+        self.boton2.move(350,40)
         
 
         self.label1 = QLabel("N° total de datos:", self.contResult)
@@ -115,9 +118,9 @@ class Aplicacion_Gui(QMainWindow):
         self.nDatEleg2.move(128,40)
         self.label1 = QLabel("Ecuación obtenida por regresión:", self.contResult)
         self.label1.move(10,65)
-        self.lEcu = QLabel(self.ecu, self.contResult)
-        self.lEcu.setFixedWidth(500)
-        self.lEcu.move(175,65)
+        self.lEcu = QLineEdit(self.ecu, self.contResult)
+        self.lEcu.setFixedWidth(400)
+        self.lEcu.move(175,63)
         self.boton1 = QPushButton("Ver más detalles", self.contResult)
         self.boton1.clicked.connect(lambda: vent_mas_detalles(self.resultados).exec_())
         self.boton1.move(10,90)
@@ -135,6 +138,13 @@ class Aplicacion_Gui(QMainWindow):
         self.show()
 
     def grafica(self):
+        
+        if self.nDatEleg1.text() != '0':
+            self.n_dat_eleg = int(self.nDatEleg1.text())
+        self.ecu = funciones.calcular_polinomio(self.n_meses[:self.n_dat_eleg], self.consumo[:self.n_dat_eleg])
+        self.actualizar_pag()
+        self.resultados = funciones.calcular_tabla(self.ecu, self.n_meses, self.consumo)
+        
         #Se define la caja que va contner a las figuras
         self.figuras = QHBoxLayout()
         self.figura1 = QVBoxLayout()
@@ -178,9 +188,25 @@ class Aplicacion_Gui(QMainWindow):
         self.informe.drawString(70,730, f'Dirección de la fuente de datos: {self.direc}')
         self.informe.drawString(70,710, f'N° datos: {self.n_dat}')
         self.informe.drawString(70,690, f'N° datos considerados para la creación de la ecuación: {self.n_dat_eleg}')
-        self.informe.drawString(70,670, f'Ecuación obtenida por regresión:')
-        self.informe.drawString(70,650, f'{str(self.ecu)}')
-        self.informe.drawString(70,630, 'Tabla de errores:')
+        self.informe.drawString(70,670, 'Ecuación obtenida por regresión:')
+        
+        cad=str(self.ecu).replace('\n','')
+        pos=650
+        l_cadena=80
+        n_lineas=int(len(cad)/l_cadena)+1
+        print(len(cad))
+        
+        for i in range(n_lineas):
+            i=i+1
+            if i == n_lineas:
+                linea = cad[l_cadena*(i-1):]
+            else:
+                linea = cad[l_cadena*(i-1):l_cadena*i]
+            
+            print(linea)
+            self.informe.drawString(70,670-i*20, f'{linea}')
+            
+        self.informe.drawString(70,650-n_lineas*20, 'Tabla de errores:')
 
         # Crear la tabla
         table = Table(self.resultados)
@@ -195,7 +221,7 @@ class Aplicacion_Gui(QMainWindow):
 
         # Dibujar la tabla en el PDF
         table.wrapOn(self.informe, 0, 0)
-        table.drawOn(self.informe, 100, 350)
+        table.drawOn(self.informe, 100, 370-n_lineas*20)
 
         self.informe.save()
 
@@ -211,11 +237,8 @@ class Aplicacion_Gui(QMainWindow):
             
             for i in range(fila):
                 self.meses.append(str(self.doc.iloc[i,0])[5:7])
-                self.n_meses.append(i)
+                self.n_meses.append(i+1)
                 self.consumo.append(float(self.doc.iloc[i,2]))
-
-            self.ecu = funciones.calcular_polinomio(self.n_meses[:self.n_dat_eleg], self.consumo[:self.n_dat_eleg])
-            self.grafica()
 
             self.actualizar_pag()
 
@@ -227,14 +250,7 @@ class Aplicacion_Gui(QMainWindow):
         self.nDat2.setText(self.n_dat)
         self.nDatEleg1.setText(str(self.n_dat_eleg))
         self.nDatEleg2.setText(str(self.n_dat_eleg))
-        self.lEcu.setText(str(self.ecu))
-        self.resultados = funciones.calcular_tabla(self.ecu, self.n_meses, self.consumo)
-
-class TablaEjemplo(QWidget):
-    def __init__(self):
-        super().__init__()
-        self.setWindowTitle("Ejemplo de Tabla en PyQt5")
-        self.setGeometry(100, 100, 400, 300)
+        self.lEcu.setText(str(self.ecu).replace('\n', ''))
 
 class vent_mas_detalles(QDialog):
     def __init__(self, info):
@@ -252,14 +268,14 @@ class vent_mas_detalles(QDialog):
         self.contPrincipal = QVBoxLayout()
         #SE DEFINE LOS CONTENEDORES
         self.contResult = QGroupBox('PORCENTAJE DE ERROR DE LOS VALORES PREDICHOS')
-        self.contResult.setFixedHeight(400)
 
-        #COLOCAR LA TABLA
+        #COLOCAMOS LA TABLA
         #############################################################
         #############################################################
         tabla = QTableWidget()
-        tabla.setRowCount(13)  # Número de filas
-        tabla.setColumnCount(5)
+        tabla.setRowCount(len(self.info))  # Número de filas
+        tabla.setColumnCount(len(self.info[1]))
+        
         for i in range(len(self.info)):
             for j in range(len(self.info[1])):
                 print(self.info)

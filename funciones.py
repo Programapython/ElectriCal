@@ -41,4 +41,7 @@ def calcular_tabla(pol,x_vals,y_vals):
         resultados.append(result_i)
 
     return resultados
+        
+    
+    
 
