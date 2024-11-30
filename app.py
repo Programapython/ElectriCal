@@ -10,6 +10,7 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
 from reportlab.platypus import Table, TableStyle
 
+import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationToolbar2QT
 from matplotlib.figure import Figure
 
@@ -31,6 +32,7 @@ class Aplicacion_Gui(QMainWindow):
         self.n_meses=[]
         self.consumo=[]
 
+        self.n_graf=0
         self.n_informe=0
         self.direc="Ningun archivo seleccionado"
         self.n_dat="0"
@@ -138,6 +140,8 @@ class Aplicacion_Gui(QMainWindow):
         self.show()
 
     def grafica(self):
+
+        plt.close('all')
         
         if self.nDatEleg1.text() != '0':
             self.n_dat_eleg = int(self.nDatEleg1.text())
@@ -166,20 +170,24 @@ class Aplicacion_Gui(QMainWindow):
         ax1 = self.fig1.add_subplot(111)
         funciones.graficar_polinomio_ajustado(ax1,self.ecu, self.n_meses, self.consumo, self.n_dat_eleg)
         self.canva1.draw()
+        print("1")
 
         ax2 = self.fig2.add_subplot(111)
         funciones.graficar_polinomio_original(ax2,self.meses,self.consumo)
         self.canva2.draw()
+        print("2")
 
-        self.figura1.addWidget(self.toolbar1)
-        self.figura1.addWidget(self.canva1)
-        self.figura2.addWidget(self.toolbar2)
-        self.figura2.addWidget(self.canva2)
+        if self.n_graf == 0:
+            self.n_graf = 1
+            self.figura1.addWidget(self.toolbar1)
+            self.figura1.addWidget(self.canva1)
+            self.figura2.addWidget(self.toolbar2)
+            self.figura2.addWidget(self.canva2)
 
-        self.figuras.addLayout(self.figura1)
-        self.figuras.addLayout(self.figura2)
+            self.figuras.addLayout(self.figura1)
+            self.figuras.addLayout(self.figura2)
 
-        self.contGraf.setLayout(self.figuras)
+            self.contGraf.setLayout(self.figuras)
 
     def gen_informe(self):
         self.n_informe += 1
@@ -190,7 +198,7 @@ class Aplicacion_Gui(QMainWindow):
         self.informe.drawString(70,690, f'N° datos considerados para la creación de la ecuación: {self.n_dat_eleg}')
         self.informe.drawString(70,670, 'Ecuación obtenida por regresión:')
         
-        cad=str(self.ecu).replace('\n','')
+        cad=str(self.ecu).replace('\n','').replace('**','^')
         pos=650
         l_cadena=80
         n_lineas=int(len(cad)/l_cadena)+1
@@ -250,7 +258,7 @@ class Aplicacion_Gui(QMainWindow):
         self.nDat2.setText(self.n_dat)
         self.nDatEleg1.setText(str(self.n_dat_eleg))
         self.nDatEleg2.setText(str(self.n_dat_eleg))
-        self.lEcu.setText(str(self.ecu).replace('\n', ''))
+        self.lEcu.setText(str(self.ecu).replace('\n', '').replace('**','^'))
 
 class vent_mas_detalles(QDialog):
     def __init__(self, info):
